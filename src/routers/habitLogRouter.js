@@ -4,22 +4,25 @@ const pool = require('../configs/DB.config');
 const habitLogRouter = express.Router();
 
 habitLogRouter.get('/', (request, response) => {
-  const {getBy, condition, input} = request.query;
+  let {getBy, condition, input} = request.query;
+  let queryString;
 
-  let formattedCondition;
-  switch (condition.toLowerCase()) {
+  switch (condition) {
     case "more-than":
-      formattedCondition = ">";
+      queryString = `SELECT habit_log.date AS date, habit_info.name AS name, habit_log.duration AS duration, habit_log.notes AS notes FROM habit_log LEFT JOIN habit_info ON habit_log.habit_id = habit_info.id WHERE ${getBy} > $1;`;
       break;
     case "less-than":
-      formattedCondition = "<";
-  
+      queryString = `SELECT habit_log.date AS date, habit_info.name AS name, habit_log.duration AS duration, habit_log.notes AS notes FROM habit_log LEFT JOIN habit_info ON habit_log.habit_id = habit_info.id WHERE ${getBy} < $1;`;
+      break;
+      case "equals":
+        queryString = `SELECT habit_log.date AS date, habit_info.name AS name, habit_log.duration AS duration, habit_log.notes AS notes FROM habit_log LEFT JOIN habit_info ON habit_log.habit_id = habit_info.id WHERE ${getBy} = $1;`;
+        break;
     default:
-      formattedCondition = "=";
+      throw Error('wrong condition type');
       break;
   }
-  console.log(getBy, condition, input)
-    pool.query('SELECT habit_log.date AS date, habit_info.name AS name, habit_log.duration AS duration, habit_log.notes AS notes FROM habit_log LEFT JOIN habit_info ON habit_log.habit_id = habit_info.id WHERE $1 $2 $3;', [getBy, formattedCondition, input],(error, results) => {
+
+  pool.query(queryString, [input], (error, results) => {
       if (error) {
         throw error
       }
@@ -39,3 +42,4 @@ habitLogRouter.post('/', (request, response) => {
   
 
 module.exports = habitLogRouter;
+
